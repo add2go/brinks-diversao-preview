@@ -80,6 +80,13 @@
   const select=form.elements.namedItem('experience');
   const choice=new URLSearchParams(location.search).get('experience');
   if(['play','paint','custom','help'].includes(choice))select.value=choice;
+  const business=form.dataset.corporate==='true';
+  if(business){
+    const profile=new URLSearchParams(location.search).get('profile');
+    if(['company','academy','daycare'].includes(profile))form.elements.namedItem('profile').value=profile;
+    const languageLink=document.querySelector('.languages a:not([aria-current])');
+    if(languageLink&&['company','academy','daycare'].includes(profile))languageLink.href+='?profile='+profile;
+  }
   const date=form.elements.namedItem('date');
   const flexible=document.querySelector('#flexible-date');
   const localToday=new Date();
@@ -96,6 +103,12 @@
     const data=new FormData(form);
     const labels=portuguese?['Nome','Email','Cidade','Data','Crianças','Idades','Experiência','Observações']:['Name','Email','City','Date','Children','Ages','Experience','Notes'];
     const values=[data.get('name'),data.get('email'),data.get('city'),flexible.checked?(portuguese?'A definir':'To be confirmed'):data.get('date'),data.get('children'),data.get('ages'),select.options[select.selectedIndex].textContent,data.get('message')];
+    if(business){
+      const businessLabels=portuguese?['Organização','Cargo / função','Perfil','Frequência','Objetivo','Espaço e necessidades']:['Organisation','Role','Profile','Frequency','Goal','Space and requirements'];
+      const selectedText=name=>{const field=form.elements.namedItem(name);return field.options[field.selectedIndex].textContent;};
+      labels.unshift(...businessLabels);
+      values.unshift(data.get('organisation'),data.get('role'),selectedText('profile'),selectedText('frequency'),data.get('goal'),data.get('space'));
+    }
     summary.replaceChildren();
     const pairs=[];
     values.forEach((value,index)=>{if(!value)return;const row=document.createElement('div');const dt=document.createElement('dt');const dd=document.createElement('dd');dt.textContent=labels[index];dd.textContent=String(value);row.append(dt,dd);summary.append(row);pairs.push(`${labels[index]}: ${value}`);});
@@ -107,6 +120,6 @@
     try{await navigator.clipboard.writeText(brief);copyButton.textContent=copyButton.dataset.copied;}
     catch{const range=document.createRange();range.selectNodeContents(summary);window.getSelection()?.removeAllRanges();window.getSelection()?.addRange(range);copyButton.textContent=portuguese?'Selecione e copie o resumo':'Select and copy the brief';}
   });
-  document.querySelector('#download-brief').addEventListener('click',()=>{const blob=new Blob([brief],{type:'text/plain;charset=utf-8'});const link=document.createElement('a');const address=URL.createObjectURL(blob);link.href=address;link.download='brinks-party-brief.txt';link.click();setTimeout(()=>URL.revokeObjectURL(address),1000);});
+  document.querySelector('#download-brief').addEventListener('click',()=>{const blob=new Blob([brief],{type:'text/plain;charset=utf-8'});const link=document.createElement('a');const address=URL.createObjectURL(blob);link.href=address;link.download=business?'brinks-corporate-brief.txt':'brinks-party-brief.txt';link.click();setTimeout(()=>URL.revokeObjectURL(address),1000);});
   document.querySelector('#edit-brief').addEventListener('click',()=>{form.hidden=false;result.hidden=true;copyButton.textContent=copyButton.dataset.label;form.elements.namedItem('name').focus();});
 })();
