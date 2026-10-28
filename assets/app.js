@@ -21,6 +21,59 @@
   document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{filter=button.dataset.filter;document.querySelectorAll('[data-filter]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));filterStories();}));
   search?.addEventListener('input',filterStories);
 
+  document.querySelectorAll('[data-review-carousel]').forEach(carousel=>{
+    const slides=[...carousel.querySelectorAll('[data-review-slide]')];
+    const dots=[...carousel.querySelectorAll('[data-review-dot]')];
+    const counter=carousel.querySelector('[data-review-counter]');
+    const announcement=carousel.querySelector('[data-review-announcement]');
+    let index=0;
+    function showReview(next){
+      index=(next+slides.length)%slides.length;
+      slides.forEach((slide,i)=>{slide.hidden=i!==index;});
+      dots.forEach((dot,i)=>{if(i===index)dot.setAttribute('aria-current','true');else dot.removeAttribute('aria-current');});
+      counter.textContent=`${String(index+1).padStart(2,'0')} / ${String(slides.length).padStart(2,'0')}`;
+      announcement.textContent=`${carousel.dataset.reviewLabel} ${index+1} ${carousel.dataset.of} ${slides.length}`;
+    }
+    carousel.querySelector('[data-review-previous]').addEventListener('click',()=>showReview(index-1));
+    carousel.querySelector('[data-review-next]').addEventListener('click',()=>showReview(index+1));
+    dots.forEach((dot,i)=>dot.addEventListener('click',()=>showReview(i)));
+    carousel.addEventListener('keydown',event=>{if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();showReview(index+(event.key==='ArrowRight'?1:-1));}});
+    let touchStart=null;
+    carousel.querySelector('.review-slides').addEventListener('touchstart',event=>{const touch=event.changedTouches[0];touchStart={x:touch.clientX,y:touch.clientY};},{passive:true});
+    carousel.querySelector('.review-slides').addEventListener('touchend',event=>{if(!touchStart)return;const touch=event.changedTouches[0],dx=touch.clientX-touchStart.x,dy=touch.clientY-touchStart.y;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4)showReview(index+(dx<0?1:-1));touchStart=null;},{passive:true});
+  });
+
+  const chatPanel=document.querySelector('#chat-panel');
+  const chatLauncher=document.querySelector('#chat-launcher');
+  const chatPayload=document.querySelector('#chat-data');
+  if(chatPanel&&chatLauncher&&chatPayload){
+    const data=JSON.parse(chatPayload.textContent);
+    const log=document.querySelector('#chat-log');
+    const input=document.querySelector('#chat-input');
+    function setChatOpen(open){chatPanel.hidden=!open;chatLauncher.setAttribute('aria-expanded',String(open));chatLauncher.setAttribute('aria-label',open?data.close:data.open);if(open){(window.matchMedia('(max-width:760px)').matches?document.querySelector('#chat-close'):input).focus();}else chatLauncher.focus();}
+    chatLauncher.addEventListener('click',()=>setChatOpen(chatPanel.hidden));
+    document.querySelector('#chat-close').addEventListener('click',()=>setChatOpen(false));
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!chatPanel.hidden&&!dialog?.open){event.preventDefault();setChatOpen(false);}});
+    function addMessage(text,kind){
+      const message=document.createElement('div');message.className=`chat-message ${kind}`;
+      const author=document.createElement('span');author.textContent=kind==='assistant'?'Brinks':(portuguese?'Você':'You');
+      const paragraph=document.createElement('p');paragraph.textContent=text;
+      message.append(author,paragraph);log.append(message);
+      while(log.children.length>21)log.firstElementChild.remove();
+      log.scrollTop=log.scrollHeight;
+    }
+    function answer(question,topicIndex){
+      addMessage(question,'visitor');
+      const normal=normalize(question);
+      let topic=Number.isInteger(topicIndex)?data.topics[topicIndex]:null;
+      if(!topic){topic=data.topics.find(item=>item.keywords.some(word=>new RegExp(`(?:^|\\s)${word}(?:$|\\s|[?!.,])`,'i').test(normal)));}
+      const greeting=/^(hi|hello|hey|oi|ola)[!?.\s]*$/.test(normal);
+      addMessage(topic?topic.answer:(greeting?data.greeting:data.fallback),'assistant');
+    }
+    document.querySelectorAll('[data-chat-topic]').forEach(button=>button.addEventListener('click',()=>{const index=Number(button.dataset.chatTopic);answer(data.topics[index].question,index);}));
+    document.querySelector('#chat-form').addEventListener('submit',event=>{event.preventDefault();const question=input.value.trim();if(!question)return;input.value='';answer(question);input.focus();});
+  }
+
   const form=document.querySelector('#quote-form');
   if(!form)return;
   const select=form.elements.namedItem('experience');
