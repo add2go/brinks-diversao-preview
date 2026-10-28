@@ -72,6 +72,7 @@
     }
     document.querySelectorAll('[data-chat-topic]').forEach(button=>button.addEventListener('click',()=>{const index=Number(button.dataset.chatTopic);answer(data.topics[index].question,index);}));
     document.querySelector('#chat-form').addEventListener('submit',event=>{event.preventDefault();const question=input.value.trim();if(!question)return;input.value='';answer(question);input.focus();});
+    if(document.body.dataset.chatPreview==='true')setChatOpen(true);
   }
 
   const form=document.querySelector('#quote-form');
