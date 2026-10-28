@@ -13,6 +13,9 @@
   document.querySelectorAll('[data-review-open]').forEach(button=>button.addEventListener('click',()=>dialog.showModal()));
   document.querySelectorAll('[data-review-close]').forEach(button=>button.addEventListener('click',()=>dialog.close()));
   dialog?.addEventListener('click',event=>{if(event.target===dialog){const box=dialog.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)dialog.close();}});
+  const whatsappDialog=document.querySelector('#whatsapp-dialog');
+  document.querySelectorAll('[data-whatsapp-open]').forEach(button=>button.addEventListener('click',()=>whatsappDialog?.showModal()));
+  document.querySelectorAll('[data-whatsapp-close]').forEach(button=>button.addEventListener('click',()=>whatsappDialog?.close()));
 
   const search=document.querySelector('#journal-search');
   let filter='all';
@@ -53,7 +56,7 @@
     function setChatOpen(open){chatPanel.hidden=!open;chatLauncher.setAttribute('aria-expanded',String(open));chatLauncher.setAttribute('aria-label',open?data.close:data.open);if(open){(window.matchMedia('(max-width:760px)').matches?document.querySelector('#chat-close'):input).focus();}else chatLauncher.focus();}
     chatLauncher.addEventListener('click',()=>setChatOpen(chatPanel.hidden));
     document.querySelector('#chat-close').addEventListener('click',()=>setChatOpen(false));
-    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!chatPanel.hidden&&!dialog?.open){event.preventDefault();setChatOpen(false);}});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!chatPanel.hidden&&!document.querySelector('dialog[open]')){event.preventDefault();setChatOpen(false);}});
     function addMessage(text,kind){
       const message=document.createElement('div');message.className=`chat-message ${kind}`;
       const author=document.createElement('span');author.textContent=kind==='assistant'?'Brinks':(portuguese?'Você':'You');
